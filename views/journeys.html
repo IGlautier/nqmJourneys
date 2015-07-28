@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>NQMRDPJourneyTable</title>
+    <script src="http://d3js.org/d3.v3.js"></script>
+    <!-- <script src="d3.js"></script> -->
+    <!--<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>-->
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
+    <script src="nqmpackage/rdpInterface.js"></script>
+    <script src="nqmpackage/nqmRDP.js"></script>
+    <script src="nqmpackage/nqmJourneyGPS.js"></script>
+    <link rel="stylesheet" href="slickgrid/slick.grid.css" type="text/css" />
+    <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css" />
+    <link rel="stylesheet" href="slickgrid/examples.css" type="text/css" />
+	<link rel="stylesheet" href="stylesheets/style.css" type="text/css" />
+    <script src="lib/jquery-1.7.min.js"></script>
+    <script src="lib/jquery.event.drag-2.2.js"></script>
+    <script src="slickgrid/slick.core.js"></script>
+    <script src="slickgrid/slick.grid.js"></script>
+    <script src="plugins/slick.cellrangedecorator.js"></script>
+    <script src="plugins/slick.cellrangeselector.js"></script>
+    <script src="plugins/slick.cellselectionmodel.js"></script>
+</head>
+
+<body>
+	<button onclick="draw('/stream?gps=GPS002')">GPS 1</button>
+	<button onclick="draw('/stream?gps=GPS003')">GPS 2</button>
+	<button onclick="draw('/stream?gps=GPS004')">GPS 3</button>
+	
+    <table width="100%">
+        <tr>
+            <td valign="top">
+                <label>Journey list:</label>
+                <div id="myGrid1" style="width:340px;height:500px;"></div>
+            </td>
+            <td valign="top">
+                <label>Journey map: Journey <span class="jNumber">...</span></label>
+                <div id="map" style="width: 1150px;height:500px;"></div>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <table width="100%">
+        <tr>
+            <td valign="top">
+                <label>All GPS data list:</label>
+                <div id="myGrid2" style="width:500px;height:500px;"></div>
+            </td>
+            <td valign="top">
+                <label>Simplified journey data list: Journey <span class="jNumber">...</span></label>
+                <div id="myGrid3" style="width:580px;"></div>
+            </td>
+            <td valign="top">
+                <div>
+                    <h2>Demonstrates:</h2>
+                    <p>
+                        In the “Journey list”, the journey number has been listed with the start and end reference number of the raw data. <span style="color: red;"><u>DoubleClick</u></span> the "No." column in the “Journey list”, the journey route will be shown in the “Journey map” with the “Start” point marker, which is based on the simplified data. The first GPS data of this journey can be viewed on the top of “All GPS data list” which is a container of all raw data. The “Simplified journey data list” presents the simplified data with the original order of the raw data for the chosen journey.
+                    </p>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <script>
+	$('button').click(function(){
+		$('button.red').removeClass('red')
+			$(this).addClass('red');
+	});
+	function draw(feed) {
+		
+		if(typeof map != "undefined") map.remove();
+
+		var dataName = feed; //GPS data
+		
+		var timespan = 30000;
+		var minSpeed = 6;
+
+		var epsilon = -0.008;
+	//	var epsilon = document.getElementById("epsilon")/1000;
+		d3.json(dataName, function(error, data1) {
+			if (error) {
+				throw new Error('cannot open ' + dataName);
+			}
+
+			data1 = data1.sort(function(a, b) {
+				return a.time - b.time;
+			});
+
+			var i;
+			var len = data1.length;
+
+			var data = [];
+
+			for (i = 0; i < len; i++) {
+				data.push({
+					order: (i + 1),
+					speed: data1[i].speed,
+					timestamp: data1[i].timestamp,
+					lat: data1[i].lat,
+					lon: data1[i].lon
+				});
+			}
+
+			var indexData = journeyMetadata(data, timespan, minSpeed);
+
+			var grid1, grid2, grid3;
+
+			function formatter(row, cell, value, columnDef, dataContext) {
+				return "<u>Journey " + (value + 1) + "</u>";
+			}
+
+			var columns1 = [{
+				id: "no",
+				name: "No.",
+				field: "no",
+				formatter: formatter
+			}, {
+				id: "type",
+				name: "Type",
+				field: "type"
+			}, {
+				id: "start",
+				name: "Start",
+				field: "start"
+			}, {
+				id: "end",
+				name: "End",
+				field: "end",
+				width: 83
+			}];
+
+			var columns2 = [{
+				id: "order",
+				name: "Order",
+				field: "order"
+			}, {
+				id: "speed",
+				name: "Speed",
+				field: "speed"
+			}, {
+				id: "time",
+				name: "Time",
+				field: "time",
+				width: 160
+			}, {
+				id: "lat",
+				name: "Lat",
+				field: "lat"
+			}, {
+				id: "lon",
+				name: "Lon",
+				field: "lon",
+				width: 83
+			}];
+
+			var columns3 = [{
+				id: "no",
+				name: "No.",
+				field: "no"
+			}, {
+				id: "order",
+				name: "Order",
+				field: "order"
+			}, {
+				id: "speed",
+				name: "Speed",
+				field: "speed"
+			}, {
+				id: "time",
+				name: "Time",
+				field: "time",
+				width: 160
+			}, {
+				id: "lat",
+				name: "Lat",
+				field: "lat"
+			}, {
+				id: "lon",
+				name: "Lon",
+				field: "lon",
+				width: 83
+			}];
+
+
+			var options = {
+				enableCellNavigation: true,
+				enableColumnReorder: false
+			};
+
+			var options3 = {
+				enableCellNavigation: true,
+				enableColumnReorder: false,
+				autoHeight: true
+			};
+
+			$(function() {
+				len = indexData.length;
+				var tdata1 = [];
+				for (var i = 0; i < len; i++) {
+					tdata1[i] = {
+						no: i,
+						type: indexData[i].type,
+						start: indexData[i].start,
+						end: indexData[i].end
+					};
+				}
+				grid1 = new Slick.Grid("#myGrid1", tdata1, columns1, options);
+
+				len = data.length;
+				var tdata2 = [];
+				for (var i = 0; i < len; i++) {
+					tdata2[i] = {
+						order: data[i].order,
+						speed: data[i].speed,
+						time: (new Date(+data[i].timestamp)).toISOString(),
+						lat: data[i].lat,
+						lon: data[i].lon
+					};
+				}
+				grid2 = new Slick.Grid("#myGrid2", tdata2, columns2, options);
+
+				grid3 = new Slick.Grid("#myGrid3", [{}], columns3, options3);
+
+				mapShowInit();
+
+				var components = [];
+				var row = 0;
+
+				$('.slick-cell').mouseenter(function() {
+					$(this.parentNode.children).addClass('slick-cell-hovered');
+				});
+
+				$('.slick-cell').mouseleave(function() {
+					$(this.parentNode.children).removeClass('slick-cell-hovered');
+				});
+
+				grid1.setSelectionModel(new Slick.CellSelectionModel());
+
+				grid1.onDblClick.subscribe(function() {
+					if (grid1.getActiveCell()) {
+						row = grid1.getActiveCell().row;
+						col = grid1.getActiveCell().cell;
+
+						if (+col == 0) {
+							for (i = 0; i < components.length; i++) {
+								map.removeLayer(components[i]);
+							}
+
+							d3.selectAll(".jNumber").text(+row + 1);
+
+							components = [];
+
+							grid2.scrollRowToTop(+indexData[row].start - 1);
+
+							var journeyNumber = +row + 1;
+							if ((journeyNumber < 1) || (journeyNumber > indexData.length)) {
+								throw new Error('Invalid journey');
+							}
+
+							var xyData = fXYData(data, indexData[journeyNumber - 1].start, indexData[journeyNumber - 1].end);
+
+							var myRDP = new NqmRDP();
+
+							var xkey = "X";
+							var ykey = "Y";
+
+							myRDP.initRDP(xyData, xkey, ykey, epsilon);
+
+							var simplifiedData = myRDP.nqmRDP();
+
+							len = simplifiedData.length;
+
+							var simplifiedIndex = [];
+							var tdata3 = [];
+							var iorder;
+							for (i = 0; i < len; i++) {
+								iorder = +simplifiedData[i].order;
+
+								simplifiedIndex.push(iorder);
+
+								tdata3[i] = {
+									no: (i + 1),
+									order: iorder,
+									speed: data[iorder - 1].speed,
+									time: (new Date(+data[iorder - 1].timestamp)).toISOString(),
+									lat: data[iorder - 1].lat,
+									lon: data[iorder - 1].lon
+								};
+							}
+
+							if (len > 19) {
+								d3.select("#myGrid3").style("height", "500px");
+
+								options3 = {
+									enableCellNavigation: true,
+									enableColumnReorder: false
+								};
+							} else {
+								d3.select("#myGrid3").style("height", "auto");
+
+								options3 = {
+									enableCellNavigation: true,
+									enableColumnReorder: false,
+									autoHeight: true
+								};
+							}
+
+							grid3 = new Slick.Grid("#myGrid3", tdata3, columns3, options3);
+
+							var lineData = fLineData(data, simplifiedIndex);
+
+							var jType = indexData[journeyNumber - 1].type;
+							components = mapShow(lineData, journeyNumber, components, jType);
+
+							$('.slick-cell').mouseenter(function() {
+								$(this.parentNode.children).addClass('slick-cell-hovered');
+							});
+
+							$('.slick-cell').mouseleave(function() {
+								$(this.parentNode.children).removeClass('slick-cell-hovered');
+							});
+						}
+					}
+				});
+			})
+		});
+	}
+	function initial() {
+	var dataName = '/stream?gps=GPS002'; //GPS data
+		
+		var timespan = 30000;
+		var minSpeed = 6;
+
+		var epsilon = -0.008;
+		//var epsilon = 0.001;
+
+		d3.json(dataName, function(error, data1) {
+			if (error) {
+				throw new Error('cannot open ' + dataName);
+			}
+
+			data1 = data1.sort(function(a, b) {
+				return a.time - b.time;
+			});
+
+			var i;
+			var len = data1.length;
+
+			var data = [];
+
+			for (i = 0; i < len; i++) {
+				data.push({
+					order: (i + 1),
+					speed: data1[i].speed,
+					timestamp: data1[i].timestamp,
+					lat: data1[i].lat,
+					lon: data1[i].lon
+				});
+			}
+
+			var indexData = journeyMetadata(data, timespan, minSpeed);
+
+			var grid1, grid2, grid3;
+
+			function formatter(row, cell, value, columnDef, dataContext) {
+				return "<u>Journey " + (value + 1) + "</u>";
+			}
+
+			var columns1 = [{
+				id: "no",
+				name: "No.",
+				field: "no",
+				formatter: formatter
+			}, {
+				id: "type",
+				name: "Type",
+				field: "type"
+			}, {
+				id: "start",
+				name: "Start",
+				field: "start"
+			}, {
+				id: "end",
+				name: "End",
+				field: "end",
+				width: 83
+			}];
+
+			var columns2 = [{
+				id: "order",
+				name: "Order",
+				field: "order"
+			}, {
+				id: "speed",
+				name: "Speed",
+				field: "speed"
+			}, {
+				id: "time",
+				name: "Time",
+				field: "time",
+				width: 160
+			}, {
+				id: "lat",
+				name: "Lat",
+				field: "lat"
+			}, {
+				id: "lon",
+				name: "Lon",
+				field: "lon",
+				width: 83
+			}];
+
+			var columns3 = [{
+				id: "no",
+				name: "No.",
+				field: "no"
+			}, {
+				id: "order",
+				name: "Order",
+				field: "order"
+			}, {
+				id: "speed",
+				name: "Speed",
+				field: "speed"
+			}, {
+				id: "time",
+				name: "Time",
+				field: "time",
+				width: 160
+			}, {
+				id: "lat",
+				name: "Lat",
+				field: "lat"
+			}, {
+				id: "lon",
+				name: "Lon",
+				field: "lon",
+				width: 83
+			}];
+
+
+			var options = {
+				enableCellNavigation: true,
+				enableColumnReorder: false
+			};
+
+			var options3 = {
+				enableCellNavigation: true,
+				enableColumnReorder: false,
+				autoHeight: true
+			};
+
+			$(function() {
+				len = indexData.length;
+				var tdata1 = [];
+				for (var i = 0; i < len; i++) {
+					tdata1[i] = {
+						no: i,
+						type: indexData[i].type,
+						start: indexData[i].start,
+						end: indexData[i].end
+					};
+				}
+				grid1 = new Slick.Grid("#myGrid1", tdata1, columns1, options);
+
+				len = data.length;
+				var tdata2 = [];
+				for (var i = 0; i < len; i++) {
+					tdata2[i] = {
+						order: data[i].order,
+						speed: data[i].speed,
+						time: (new Date(+data[i].timestamp)).toISOString(),
+						lat: data[i].lat,
+						lon: data[i].lon
+					};
+				}
+				grid2 = new Slick.Grid("#myGrid2", tdata2, columns2, options);
+
+				grid3 = new Slick.Grid("#myGrid3", [{}], columns3, options3);
+
+				mapShowInit();
+
+				var components = [];
+				var row = 0;
+
+				$('.slick-cell').mouseenter(function() {
+					$(this.parentNode.children).addClass('slick-cell-hovered');
+				});
+
+				$('.slick-cell').mouseleave(function() {
+					$(this.parentNode.children).removeClass('slick-cell-hovered');
+				});
+
+				grid1.setSelectionModel(new Slick.CellSelectionModel());
+
+				grid1.onDblClick.subscribe(function() {
+					if (grid1.getActiveCell()) {
+						row = grid1.getActiveCell().row;
+						col = grid1.getActiveCell().cell;
+
+						if (+col == 0) {
+							for (i = 0; i < components.length; i++) {
+								map.removeLayer(components[i]);
+							}
+
+							d3.selectAll(".jNumber").text(+row + 1);
+
+							components = [];
+
+							grid2.scrollRowToTop(+indexData[row].start - 1);
+
+							var journeyNumber = +row + 1;
+							if ((journeyNumber < 1) || (journeyNumber > indexData.length)) {
+								throw new Error('Invalid journey');
+							}
+
+							var xyData = fXYData(data, indexData[journeyNumber - 1].start, indexData[journeyNumber - 1].end);
+
+							var myRDP = new NqmRDP();
+
+							var xkey = "X";
+							var ykey = "Y";
+
+							myRDP.initRDP(xyData, xkey, ykey, epsilon);
+
+							var simplifiedData = myRDP.nqmRDP();
+
+							len = simplifiedData.length;
+
+							var simplifiedIndex = [];
+							var tdata3 = [];
+							var iorder;
+							for (i = 0; i < len; i++) {
+								iorder = +simplifiedData[i].order;
+
+								simplifiedIndex.push(iorder);
+
+								tdata3[i] = {
+									no: (i + 1),
+									order: iorder,
+									speed: data[iorder - 1].speed,
+									time: (new Date(+data[iorder - 1].timestamp)).toISOString(),
+									lat: data[iorder - 1].lat,
+									lon: data[iorder - 1].lon
+								};
+							}
+
+							if (len > 19) {
+								d3.select("#myGrid3").style("height", "500px");
+
+								options3 = {
+									enableCellNavigation: true,
+									enableColumnReorder: false
+								};
+							} else {
+								d3.select("#myGrid3").style("height", "auto");
+
+								options3 = {
+									enableCellNavigation: true,
+									enableColumnReorder: false,
+									autoHeight: true
+								};
+							}
+
+							grid3 = new Slick.Grid("#myGrid3", tdata3, columns3, options3);
+
+							var lineData = fLineData(data, simplifiedIndex);
+
+							var jType = indexData[journeyNumber - 1].type;
+							components = mapShow(lineData, journeyNumber, components, jType);
+
+							$('.slick-cell').mouseenter(function() {
+								$(this.parentNode.children).addClass('slick-cell-hovered');
+							});
+
+							$('.slick-cell').mouseleave(function() {
+								$(this.parentNode.children).removeClass('slick-cell-hovered');
+							});
+						}
+					}
+				});
+			})
+		});
+	}
+	initial();
+    </script>
+</body>
+
+</html>
