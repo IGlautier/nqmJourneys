@@ -1,73 +1,64 @@
-<!DOCTYPE html>
-<html>
+<body class="blue-grey darken-2 grey-text text-lighten-5">
+	<nav>
 
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>NQMRDPJourneyTable</title>
-    <script src="http://d3js.org/d3.v3.js"></script>
-    <!-- <script src="d3.js"></script> -->
-    <!--<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
-    <script src="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>-->
-    <link rel="stylesheet" href="leaflet.css" />
-    <script src="leaflet.js"></script>
-    <script src="nqmpackage/rdpInterface.js"></script>
-    <script src="nqmpackage/nqmRDP.js"></script>
-    <script src="nqmpackage/nqmJourneyGPS.js"></script>
-    <link rel="stylesheet" href="slickgrid/slick.grid.css" type="text/css" />
-    <link rel="stylesheet" href="css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css" />
-    <link rel="stylesheet" href="slickgrid/examples.css" type="text/css" />
-	<link rel="stylesheet" href="stylesheets/style.css" type="text/css" />
-    <script src="lib/jquery-1.7.min.js"></script>
-    <script src="lib/jquery.event.drag-2.2.js"></script>
-    <script src="slickgrid/slick.core.js"></script>
-    <script src="slickgrid/slick.grid.js"></script>
-    <script src="plugins/slick.cellrangedecorator.js"></script>
-    <script src="plugins/slick.cellrangeselector.js"></script>
-    <script src="plugins/slick.cellselectionmodel.js"></script>
-</head>
+		<div class="nav-wrapper blue-grey lighten-1" style="padding-left: 10px; padding-right: 10px;">
+		<div style=" width: 1250px; margin-left: auto; margin-right: auto;">
+			<a href="http://nquiringminds.com" ><span style="font-weight: bold; font-size: 200%; ">nquiring</span><span style="font-weight: lighter; font-size: 200%;">minds</span></a>	
+		</div>
+		</div>
+	</nav>
+	<div class="container" style="width: 1250px">
+		
+		
+		<div class="row">
+			
+			<div class="col s9">
+		
+				<p style="font-size: 125%">
+					Select a GPS from the options to the right to view journeys for that GPS, you can select the journey to view by double clicking on the journey name in the "No." column of the journey list table. The full details of each journey are presented in the table below the map along with a full breakdown of the data used to create the journey's list.
+				</p>
+					
+			</div>
+			<div class="col s3" style="margin-top: 10px">
+				<a class="waves-effect waves-light btn blue-grey" onclick="draw('/stream?gps=GPS002')">GPS 1</a>
+				<a class="waves-effect waves-light btn blue-grey" onclick="draw('/stream?gps=GPS003')">GPS 2</a>
+				<a class="waves-effect waves-light btn blue-grey" onclick="draw('/stream?gps=GPS004')">GPS 3</a>
+				
+			</div>
+			
+		</div>
+		
+		<div class="row">
+			<div class="col s9">
+				<label>Journey map: Journey <span class="jNumber">...</span></label>
+				<div id="map" style="width: 950px; height: 500px;"></div>
+			</div>
+			<div class="col s3">	 
+				<label>Journey list:</label>
+					<div id="myGrid1" style="width: 300px; height:500px;"></div>			
+				
+			</div>
+		</div>
+		
+		<div class="row">
+			<div class="col s6">
+				<label>All GPS data list:</label>
+				<div id="myGrid2" style="width:623px;height:500px;"></div>
+			</div> 
+			<div class="col s6">		
+				<label>Simplified journey data list: Journey <span class="jNumber">...</span></label>
+				<div id="myGrid3" style="width:623px;"></div>
+			</div>
+		</div>
 
-<body>
-	<button onclick="draw('/stream?gps=GPS002')">GPS 1</button>
-	<button onclick="draw('/stream?gps=GPS003')">GPS 2</button>
-	<button onclick="draw('/stream?gps=GPS004')">GPS 3</button>
-	
-    <table width="100%">
-        <tr>
-            <td valign="top">
-                <label>Journey list:</label>
-                <div id="myGrid1" style="width:340px;height:500px;"></div>
-            </td>
-            <td valign="top">
-                <label>Journey map: Journey <span class="jNumber">...</span></label>
-                <div id="map" style="width: 1150px;height:500px;"></div>
-            </td>
-        </tr>
-    </table>
-    <br>
-    <table width="100%">
-        <tr>
-            <td valign="top">
-                <label>All GPS data list:</label>
-                <div id="myGrid2" style="width:500px;height:500px;"></div>
-            </td>
-            <td valign="top">
-                <label>Simplified journey data list: Journey <span class="jNumber">...</span></label>
-                <div id="myGrid3" style="width:580px;"></div>
-            </td>
-            <td valign="top">
-                <div>
-                    <h2>Demonstrates:</h2>
-                    <p>
-                        In the “Journey list”, the journey number has been listed with the start and end reference number of the raw data. <span style="color: red;"><u>DoubleClick</u></span> the "No." column in the “Journey list”, the journey route will be shown in the “Journey map” with the “Start” point marker, which is based on the simplified data. The first GPS data of this journey can be viewed on the top of “All GPS data list” which is a container of all raw data. The “Simplified journey data list” presents the simplified data with the original order of the raw data for the chosen journey.
-                    </p>
-                </div>
-            </td>
-        </tr>
-    </table>
+	</div>
+
     <script>
-	$('button').click(function(){
-		$('button.red').removeClass('red')
-			$(this).addClass('red');
+	$('.btn').click(function(){
+		$('.btn.blue-grey.darken-2').removeClass('darken-2');
+		
+			$(this).addClass('darken-2');
+
 	});
 	function draw(feed) {
 		
@@ -78,7 +69,7 @@
 		var timespan = 30000;
 		var minSpeed = 6;
 
-		var epsilon = -0.008;
+		var epsilon = 0.008;
 	//	var epsilon = document.getElementById("epsilon")/1000;
 		d3.json(dataName, function(error, data1) {
 			if (error) {
@@ -86,7 +77,7 @@
 			}
 
 			data1 = data1.sort(function(a, b) {
-				return a.time - b.time;
+				return a.timestamp - b.timestamp;
 			});
 
 			var i;
@@ -334,7 +325,7 @@
 		var timespan = 30000;
 		var minSpeed = 6;
 
-		var epsilon = -0.008;
+		var epsilon = 0.008;
 		//var epsilon = 0.001;
 
 		d3.json(dataName, function(error, data1) {
@@ -343,7 +334,7 @@
 			}
 
 			data1 = data1.sort(function(a, b) {
-				return a.time - b.time;
+				return a.timestamp - b.timestamp;
 			});
 
 			var i;
@@ -381,36 +372,40 @@
 			}, {
 				id: "start",
 				name: "Start",
-				field: "start"
+				field: "start",
+				width: 69
 			}, {
 				id: "end",
 				name: "End",
 				field: "end",
-				width: 83
+				width: 69
 			}];
 
 			var columns2 = [{
 				id: "order",
 				name: "Order",
-				field: "order"
+				field: "order",
+				width:108
 			}, {
 				id: "speed",
 				name: "Speed",
-				field: "speed"
+				field: "speed",
+				width:108
 			}, {
 				id: "time",
 				name: "Time",
 				field: "time",
-				width: 160
+				width: 180
 			}, {
 				id: "lat",
 				name: "Lat",
-				field: "lat"
+				field: "lat",
+				width: 103
 			}, {
 				id: "lon",
 				name: "Lon",
 				field: "lon",
-				width: 83
+				width: 103
 			}];
 
 			var columns3 = [{
@@ -588,5 +583,3 @@
 	initial();
     </script>
 </body>
-
-</html>
